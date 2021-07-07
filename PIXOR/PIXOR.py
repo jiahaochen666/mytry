@@ -103,5 +103,5 @@ class Pixor(nn.Module):
         x = self.header(x)
         c = self.sigmoid(self.classification(x))
         r = self.regression(x)
-        x = torch.cat((c, r), dim=1)
+        x = torch.cat((c, r), dim=1
         return x

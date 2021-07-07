@@ -17,8 +17,8 @@ testloader = torch.utils.data.DataLoader(test_data, batch_size=100, shuffle=True
 
 net = Pixor()
 PATH = 'checkpoint/ckpt.pth'
-checkpoint = torch.load(PATH)
-if checkpoint:
+if os.path.isdir('checkpoint'):
+    checkpoint = torch.load(PATH)
     net.load_state_dict(checkpoint['net'])
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 net.to(device)
