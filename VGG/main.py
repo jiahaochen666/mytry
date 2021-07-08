@@ -22,7 +22,7 @@ scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=200)
 train_data = datasets.CIFAR10(
         root="data",
         train=True,
-        download=False,
+        download=True,
         transform=ToTensor()
     )
 
