@@ -3,6 +3,10 @@ from torch.utils.data import Dataset, DataLoader
 import numpy as np
 import torch
 
+def compute_label(labels):
+    for label in labels:
+
+
 def my_collate_train(batch):
     """
     Collate function for training dataset. How to concatenate individual samples to a batch.
@@ -73,5 +77,6 @@ def load_data(root_dir: str):
 
 if __name__ == '__main__':
     a = load_data("../../Data")
-    for x, (data, label) in enumerate(a):
-        print(data)
+    a = iter(a)
+    a = next(a)
+    print(a)
