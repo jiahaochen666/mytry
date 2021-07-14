@@ -3,9 +3,6 @@ from torch.utils.data import Dataset, DataLoader
 import numpy as np
 import torch
 
-def compute_label(labels):
-    for label in labels:
-
 
 def my_collate_train(batch):
     """
