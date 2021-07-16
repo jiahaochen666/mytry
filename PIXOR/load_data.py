@@ -4,76 +4,55 @@ import numpy as np
 import torch
 
 
-def my_collate_train(batch):
-    """
-    Collate function for training dataset. How to concatenate individual samples to a batch.
-    Point Clouds and labels will be stacked along first dimension
-    :param batch: list containing a tuple of items for each sample
-    :return: batch data in desired form
-    """
+def voxelize(point_cloud: np.ndarray):
 
-    point_clouds = []
-    labels = []
-    for tuple_id, tuple in enumerate(batch):
-        point_clouds.append(tuple[0])
-        labels.append(tuple[1])
+    y_dim, x_dim, z_dim = 800, 700, 36
+    point_x = point_cloud[:, 0]
+    point_y = point_cloud[:, 1]
+    point_z = point_cloud[:, 2]
+    point_r = point_cloud[:, 3]
 
-    point_clouds = torch.stack(point_clouds)
-    labels = torch.stack(labels)
-    return point_clouds, labels
+    qx = ((point_x + 80) * 10 / 2 / 8 * 7).astype(int)
+    qy = ((point_y + 80) * 10 / 2).astype(int)
+    qz = (point_z + 32).astype(int)
 
-class Object3D(object):
-    def __init__(self, label_file_line):
-        data = label_file_line.split(' ')
-        data[1:] = [float(x) for x in data[1:]]
+    q_point = np.dstack((qx, qy, qz, point_r)).squeeze()
 
-        # extract label, truncation, occlusion
-        self.type = data[0]  # 'Car', 'Pedestrian', ...
-        self.truncation = data[1]  # truncated pixel ratio [0..1]
-        self.occlusion = int(data[2])  # 0=visible, 1=partly occluded, 2=fully occluded, 3=unknown
-        self.alpha = data[3]  # object observation angle [-pi..pi]
+    voxel_grid = np.zeros(shape=(x_dim, y_dim, z_dim), dtype=np.float32)
+    reflect_value = np.zeros(shape=(x_dim, y_dim), dtype=np.float32)
+    reflect_count = np.ones(shape=(x_dim, y_dim), dtype=int)
 
-        # extract 2d bounding box in 0-based coordinates
-        self.xmin = data[4]  # left
-        self.ymin = data[5]  # top
-        self.xmax = data[6]  # right
-        self.ymax = data[7]  # bottom
-        self.box2d = np.array([self.xmin, self.ymin, self.xmax, self.ymax])
+    for i, point in enumerate(q_point):
+        point = point.astype(int)
+        voxel_grid[point[0], point[1], point[2]] = 1
+        reflect_value[point[0], point[1]] += point[3]
+        reflect_count[point[0], point[1]] += 1
 
-        # extract 3d bounding box information
-        self.height = data[8]  # box height
-        self.width = data[9]  # box width
-        self.length = data[10]  # box length (in meters)
-        self.t = (data[11], data[12], data[13])  # location (x,y,z) in camera coord.
-        self.ry = data[14]  # yaw angle (around Y-axis in camera coordinates) [-pi..pi]
+    reflect_value /= reflect_count
 
-def load_velo_pc(velo_filename):
+    voxel = np.dstack((voxel_grid, reflect_value))
+
+    return voxel
+
+
+def load_velo_pc(velo_filename: str):
     point_cloud = np.fromfile(velo_filename, dtype=np.float32)
     point_cloud = point_cloud.reshape((-1, 4))
     return point_cloud
 
-def read_label(label_filename):
-    lines = [line.rstrip() for line in open(label_filename)]
-    lines = [line for line in lines if line.split(' ')[0] != 'DontCare']
-    objects = [Object3D(line) for line in lines]
-    return objects
 
 def load_data(root_dir: str):
     batches = []
     train_dir = os.path.join(root_dir, "training")
     lidar_dir = os.path.join(train_dir, "velodyne")
     label_dir = os.path.join(train_dir, "label_2")
-    for i in range(2):
+    for i in range(1):
         lidar_file = os.path.join(lidar_dir, "%06d.bin" % i)
-        lidar_data = load_velo_pc(lidar_file)
-        label_file = os.path.join(label_dir, "%06d.txt" % i)
-        label_data = read_label(label_file)
-        batches.append((lidar_data, label_data))
-    train_data = DataLoader(batches, shuffle=True, batch_size=1, num_workers=0, collate_fn=my_collate_train)
-    return train_data
+        raw_point_cloud = load_velo_pc(lidar_file)
+        voxel_point_cloud = voxelize(raw_point_cloud)
+
+    return raw_point_cloud
+
 
 if __name__ == '__main__':
     a = load_data("../../Data")
-    a = iter(a)
-    a = next(a)
-    print(a)
