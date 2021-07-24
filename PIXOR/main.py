@@ -6,17 +6,20 @@ from MultiLoss import MultiLoss
 from myPixor import PIXOR
 import os
 from load_data import load_dataset
+from eval import evaluate_model
 
 
 
 PATH = 'checkpoint/ckpt.pth'
-batch_size = 1
+batch_size = 2
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 data_loader = load_dataset(root="../../Data", batch_size=batch_size, device=device)
 net = PIXOR().to()
+best_loss = 10000
 if os.path.isdir('checkpoint'):
     checkpoint = torch.load(PATH)
     net.load_state_dict(checkpoint['net'])
+    best_loss = checkpoint['loss']
 net.to(device)
 criterion = MultiLoss()
 optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
@@ -24,62 +27,77 @@ scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[10], gam
 epoches = 100
 
 
-def train(input, label):
+def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, length = 100, fill = '█', printEnd = "\r"):
+    """
+    Call in a loop to create terminal progress bar
+    @params:
+        iteration   - Required  : current iteration (Int)
+        total       - Required  : total iterations (Int)
+        prefix      - Optional  : prefix string (Str)
+        suffix      - Optional  : suffix string (Str)
+        decimals    - Optional  : positive number of decimals in percent complete (Int)
+        length      - Optional  : character length of bar (Int)
+        fill        - Optional  : bar fill character (Str)
+        printEnd    - Optional  : end character (e.g. "\r", "\r\n") (Str)
+    """
+    percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
+    filledLength = int(length * iteration // total)
+    bar = fill * filledLength + '-' * (length - filledLength)
+    print(f'\r{prefix} |{bar}| {percent}% {suffix}', end = printEnd)
+    # Print New Line on Complete
+    if iteration == total:
+        print()
+
+def train(epoch):
     running_loss = 0.0
-    optimizer.zero_grad()
-    input, label = input.to(device), label.to(device)
+    printProgressBar(0, len(data_loader['train']), prefix='Progress:', suffix='Complete', length=50)
+    for i, (input, label) in enumerate(data_loader['train']):
+        optimizer.zero_grad()
+        input, label = input.to(device), label.to(device)
 
-    output = net(input)
-    predict = output.permute([0, 2, 3, 1])
-    loss = criterion(predict, label)
-    loss.backward()
-    optimizer.step()
-    running_loss += loss.item()
+        output = net(input)
+        predict = output.permute([0, 2, 3, 1])
+        loss = criterion(predict, label)
+        loss.backward()
+        optimizer.step()
+        running_loss += loss.item()
+        printProgressBar(i, len(data_loader['train']), prefix = 'Progress:', suffix = 'Complete', length = 50)
+    print(f"Epoch {epoch} Training Loss: {running_loss}")
 
-    return running_loss
-
-def test():
-    global best_acc
-    correct = 0
-    total = 0
+def test(epoch):
+    global best_loss
+    running_loss = 0.0
     # since we're not training, we don't need to calculate the gradients for our outputs
+    printProgressBar(0, len(data_loader['val']), prefix='Progress:', suffix='Complete', length=50)
     with torch.no_grad():
-        for data in data_loader['val']:
+        for i, data in enumerate(data_loader['val']):
             images, labels = data[0].to(device), data[1].to(device)
             # calculate outputs by running images through the network
-            outputs = net(images)
+            output = net(images)
             # the class with the highest energy is what we choose as prediction
-            _, predicted = torch.max(outputs.data, 1)
-            total += labels.size(0)
-            correct += (predicted == labels).sum().item()
+            predict = output.permute([0, 2, 3, 1])
+            loss = criterion(predict, labels)
+            running_loss += loss.item()
+            printProgressBar(i, len(data_loader['val']), prefix='Progress:', suffix='Complete', length=50)
 
-    print('Accuracy of the network on the 10000 test images: %d %%, best: %f' % (
-        100 * correct / total, best_acc))
+    print(f"Epoch {epoch} Testing Loss: {running_loss}, Best: {best_loss}")
 
-    acc = 100. * correct / total
-    if acc > best_acc:
+
+    if running_loss < best_loss:
         print('Saving..')
         state = {
             'net': net.state_dict(),
-            'acc': acc,
+            'loss': loss,
         }
         if not os.path.isdir('checkpoint'):
             os.mkdir('checkpoint')
         torch.save(state, 'checkpoint/ckpt.pth')
-        best_acc = acc
+        best_acc = loss
 
 if __name__ == '__main__':
     torch.cuda.empty_cache()
-    for epoch in range(100):  # loop over the dataset multiple times
-        net.train()
-        running_loss = 0.0
-        for i, (input, label) in enumerate(data_loader['train']):
-            running_loss += train(input, label)
-            if i % 25 == 0:
-                print(f"Training round {i % 25}, Loss: {running_loss}")
-                running_loss = 0.0
-            if i % 100 == 0:
-                print("Testing...")
-                test()
-            scheduler.step()
+    for epoch in range(epoches):  # loop over the dataset multiple times
+        train(epoch)
+        test(epoch)
+        scheduler.step()
     print('Finished Training')
