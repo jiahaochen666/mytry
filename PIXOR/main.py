@@ -87,12 +87,12 @@ def test(epoch):
         print('Saving..')
         state = {
             'net': net.state_dict(),
-            'loss': loss,
+            'loss': running_loss,
         }
         if not os.path.isdir('checkpoint'):
             os.mkdir('checkpoint')
         torch.save(state, 'checkpoint/ckpt.pth')
-        best_acc = loss
+        best_loss = running_loss
 
 if __name__ == '__main__':
     torch.cuda.empty_cache()
