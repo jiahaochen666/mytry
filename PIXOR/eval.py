@@ -58,7 +58,7 @@ def process_regression_target(valid_reg_predictions, validity_mask):
 
 
 ##########################
-# non-maximum suppression #
+# non-maximum suppression
 ##########################
 
 def perform_nms(valid_class_predictions, valid_box_predictions, nms_threshold):
