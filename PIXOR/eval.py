@@ -227,6 +227,7 @@ def evaluate_model(model, data_loader, distance_ranges, iou_thresholds):
             batch_predictions = model(batch_data)
 
             # convert network output to numpy for further processing
+            batch_predictions = batch_predictions.detach().cpu()
             batch_predictions = np.transpose(batch_predictions.detach().numpy(), (0, 2, 3, 1))
 
             # get final bounding box predictions
@@ -248,8 +249,8 @@ def evaluate_model(model, data_loader, distance_ranges, iou_thresholds):
                     # only consider annotations for class "Car"
                     if label.type == 'Car':
                         # compute corners of the bounding box
-                        _, bbox_corners_camera_coord = kitti_utils.compute_box_3d(label, batch_calib[id].P)
-                        bbox_corners_camera_coord = np.hstack((bbox_corners_camera_coord[:4, 0], bbox_corners_camera_coord[:4, 2]))
+                        _, bbox_corners_camera_coord = kitti_utils.compute_box_3d(label, batch_calib[0].P)
+                        bbox_corners_camera_coord = np.vstack((bbox_corners_camera_coord[:4, 0], bbox_corners_camera_coord[:4, 2]))
                         if ground_truth_box_corners is None:
                             ground_truth_box_corners = bbox_corners_camera_coord
                         else:
@@ -400,19 +401,15 @@ if __name__ == '__main__':
     batch_size = 1
 
     # create data loader
-    root_dir = 'Data/'
+    root_dir = ''
     data_loader = load_dataset(root=root_dir, batch_size=batch_size, device=device, test_set=True)
 
     # create model
-    pixor = PIXOR()
-    n_epochs_trained = 17
-    pixor.load_state_dict(torch.load('Models/PIXOR_Epoch_' + str(n_epochs_trained) + '.pt', map_location=device))
+    pixor = PIXOR().to(device)
+
 
     # evaluate model
     eval_dict = evaluate_model(pixor, data_loader, distance_ranges=[70, 50, 30], iou_thresholds=[0.5, 0.6, 0.7, 0.8, 0.9])
 
     # add identifier to dictionary
-    eval_dict['epoch'] = n_epochs_trained
-
-    # save evaluation dictionary
-    np.savez('eval_dict_epoch_' + str(n_epochs_trained) + '.npz', eval_dict=eval_dict)
+    print(eval_dict)

@@ -140,7 +140,7 @@ class PointCloudDataset(Dataset):
         self.device = device
         self.root_dir = root_dir
         self.split = split
-        self.split_dir = os.path.join(root_dir, split)
+        self.split_dir = os.path.join(root_dir, 'training')
 
         if split == 'training':
             self.num_samples = 6481
