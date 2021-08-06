@@ -116,17 +116,20 @@ def bbox_iou(box1, boxes):
     ious = np.zeros(boxes.shape[0])
     for box_id in range(boxes.shape[0]):
         box2 = boxes[box_id]
-        box2 = box2.reshape((2, 4)).T
-        rect_2 = Polygon([(box2[0, 0], box2[0, 1]), (box2[1, 0], box2[1, 1]), (box2[2, 0], box2[2, 1]),
-                          (box2[3, 0], box2[3, 1])])
-        area_2 = rect_2.area
+        try:
+            box2 = box2.reshape((2, 4)).T
+            rect_2 = Polygon([(box2[0, 0], box2[0, 1]), (box2[1, 0], box2[1, 1]), (box2[2, 0], box2[2, 1]),
+                            (box2[3, 0], box2[3, 1])])
+            area_2 = rect_2.area
 
-        # get intersection of both bounding boxes
-        inter_area = rect_1.intersection(rect_2).area
+            # get intersection of both bounding boxes
+            inter_area = rect_1.intersection(rect_2).area
 
-        # compute IoU of the two bounding boxes
-        iou = inter_area / (area_1 + area_2 - inter_area)
-        ious[box_id] = iou
+            # compute IoU of the two bounding boxes
+            iou = inter_area / (area_1 + area_2 - inter_area)
+            ious[box_id] = iou
+        except:
+            pass
 
     return ious
 
@@ -265,7 +268,7 @@ def evaluate_model(model, data_loader, distance_ranges, iou_thresholds):
 
                         # remove all predictions and labels outside of the specified range
                         max_distance_predictions = np.max(point_cloud_predictions[:, 6:], axis=1)
-                        max_distance_ground_truth = np.max(ground_truth_box_corners[:, 4:], axis=1)
+                        max_distance_ground_truth = np.max(ground_truth_box_corners[:, :4], axis=1)
                         distance_mask_predictions = np.where(max_distance_predictions <= distance_range, True, False)
                         distance_mask_ground_truth = np.where(max_distance_ground_truth <= distance_range, True, False)
                         point_cloud_predictions = point_cloud_predictions[distance_mask_predictions]
@@ -390,7 +393,6 @@ def evaluate_model(model, data_loader, distance_ranges, iou_thresholds):
         eval_dict[distance_range]['mAP'] = sum(average_precisions) / len(average_precisions)
 
     return eval_dict
-
 
 if __name__ == '__main__':
 
