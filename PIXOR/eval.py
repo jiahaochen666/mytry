@@ -415,3 +415,4 @@ if __name__ == '__main__':
 
     # add identifier to dictionary
     print(eval_dict)
+    np.savez('eval_dict' +  '.npz', eval_dict=eval_dict)
