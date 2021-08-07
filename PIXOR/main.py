@@ -6,7 +6,7 @@ from MultiLoss import MultiLoss
 from myPixor import PIXOR
 import os
 from load_data import load_dataset
-from eval import evaluate_model
+from eval_copy import evaluate_model
 
 
 
