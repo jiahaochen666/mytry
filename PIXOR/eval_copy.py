@@ -76,6 +76,8 @@ def perform_nms(valid_class_predictions, valid_box_predictions, nms_threshold):
     sorted_box_predictions = valid_box_predictions[sorted_indices]
     sorted_class_predictions = valid_class_predictions[sorted_indices]
 
+    # Todo
+
     for i in range(sorted_box_predictions.shape[0]):
         # get the IOUs of all boxes with the currently most certain bounding box
         try:
@@ -266,6 +268,7 @@ def evaluate_model(model, data_loader, distance_ranges, iou_thresholds):
                     # valid predictions and labels exist for the currently inspected point cloud
                     if ground_truth_box_corners is not None and point_cloud_predictions is not None:
 
+                        # Todo
                         # remove all predictions and labels outside of the specified range
                         max_distance_predictions = np.max(point_cloud_predictions[:, 6:], axis=1)
                         max_distance_ground_truth = np.max(ground_truth_box_corners[:, :4], axis=1)
