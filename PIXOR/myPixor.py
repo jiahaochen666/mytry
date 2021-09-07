@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import os
-from my_load_data import *
+from load_data import *
 
 
 class Residual(nn.Module):

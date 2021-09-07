@@ -162,6 +162,8 @@ class PointCloudDataset(Dataset):
 
     def __getitem__(self, index):
 
+        if self.split == "testing":
+            index += 6481
         # start time
         get_item_start_time = time.time()
 
