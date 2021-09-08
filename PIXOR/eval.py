@@ -251,7 +251,7 @@ def evaluate_model(model, data_loader, distance_ranges, iou_thresholds):
                 ground_truth_box_corners = None
                 for label in batch_labels[point_cloud_id]:
                     # only consider annotations for class "Car"
-                    if label.type == 'Car':
+                    if label.type == 'Pedestrian':
                         # compute corners of the bounding box
                         _, bbox_corners_camera_coord = kitti_utils.compute_box_3d(label, batch_calib[point_cloud_id].P)
                         bbox_corners_camera_coord = np.hstack((bbox_corners_camera_coord[:4, 0], bbox_corners_camera_coord[:4, 2]))

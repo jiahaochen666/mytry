@@ -101,7 +101,7 @@ if __name__ == '__main__':
         # display ground truth bounding boxes on BEV image and camera image
         for label in labels:
             # only consider annotations for class "Car"
-            if label.type == 'Car':
+            if label.type == 'Pedestrian':
                 # compute corners of the bounding box
                 bbox_corners_image_coord, bbox_corners_camera_coord = kitti_utils.compute_box_3d(label, calib.P)
                 # display bounding box in BEV image

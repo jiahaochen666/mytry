@@ -215,7 +215,7 @@ class PointCloudDataset(Dataset):
 
             # iterate over all 3D label objects in list
             for label in labels:
-                if label.type == 'Car':
+                if label.type == 'Pedestrian':
                     # compute corners of 3D bounding box in camera coordinates
                     _, bbox_corners_camera_coord = kitti_utils.compute_box_3d(label, calib.P, scale=1.0)
                     # get pixel label for classification and BEV bounding box
